@@ -16,9 +16,6 @@ use embassy_rp::spi;
 use embassy_rp::spi::Spi;
 use display_interface_spi::SPIInterface;
 use mipidsi::models::ILI9341Rgb565;
-use embedded_graphics::prelude::*;
-use embedded_graphics::pixelcolor::Rgb565;
-// We no longer need orientation/rotation imports!
 
 use panic_probe as _;
 use defmt_rtt as _;
@@ -27,7 +24,7 @@ use defmt_rtt as _;
 #[used]
 pub static IMAGE_DEF: ImageDef = ImageDef::secure_exe();
 
-const DISPLAY_FREQ: u32 = 55_000_000;
+const DISPLAY_FREQ: u32 = 16_000_000;
 
 const WORLD_MAP: [[i32; 24]; 24] = [
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
@@ -81,18 +78,14 @@ async fn main(_spawner: Spawner) {
     let display_spi = SpiDevice::new(&spi_bus, screen_cs);
     let di = SPIInterface::new(display_spi, screen_dc);
 
-    // Default Initialization - NO HARDWARE ROTATION!
-    let mut screen = mipidsi::Builder::new(ILI9341Rgb565, di)
+    let screen = mipidsi::Builder::new(ILI9341Rgb565, di)
         .reset_pin(screen_reset)
         .init(&mut Delay)
         .unwrap();
 
-    screen.clear(Rgb565::BLACK).unwrap();
-
     let mut display = GameDisplay::new(screen);
     let mut player = Player::new();
 
-    // Aggressive turning speeds enabled by the math approximations
     let move_speed: f32 = 0.35;
     let rot_speed: f32 = 0.08; 
 

@@ -1,4 +1,3 @@
-// Name: controls.rs
 use embassy_rp::gpio::Input;
 
 pub struct Controls<'a> {

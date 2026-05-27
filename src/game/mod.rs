@@ -1,4 +1,3 @@
-// Name: mod.rs (Inside src/game/)
 pub mod player;
 pub mod display;
 pub mod controls;

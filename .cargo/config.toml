@@ -1,0 +1,5 @@
+[build]
+target = "thumbv8m.main-none-eabihf"
+
+[target.'cfg(all(target_arch = "arm", target_os = "none"))']
+runner = ".\\picotool.exe load -u -v -x -t elf"

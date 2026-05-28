@@ -1,11 +1,14 @@
 use embedded_graphics::pixelcolor::Rgb565;
 use crate::game::engine::raycaster::RayHit;
 
-const BLACK: Rgb565 = Rgb565::new(0,  0,  0);
-const WALL_EDGE: Rgb565 = Rgb565::new(0, 63,  0);
-const WALL_MAIN: Rgb565 = Rgb565::new(0, 40,  0);
-const WALL_ALT: Rgb565  = Rgb565::new(0, 50,  0);
-const FLOOR_DOT: Rgb565 = Rgb565::new(0, 16,  0);
+const BLACK:     Rgb565 = Rgb565::new(0,  0,  0);
+const CEILING:   Rgb565 = Rgb565::new(2,  4,  8);
+const FLOOR:     Rgb565 = Rgb565::new(6,  4,  2);
+const FLOOR_DOT: Rgb565 = Rgb565::new(10, 8,  4);
+const WALL_EDGE: Rgb565 = Rgb565::new(25, 50, 25);
+
+const STONE_MAIN: Rgb565 = Rgb565::new(15, 30, 15);
+const STONE_DARK: Rgb565 = Rgb565::new(10, 20, 10);
 
 const SCREEN_HEIGHT: i32 = 240;
 const HALF_HEIGHT: i32 = SCREEN_HEIGHT / 2;
@@ -27,40 +30,39 @@ pub fn wall_slice(perp_dist: f32) -> WallSlice {
     }
 }
 
-pub fn wall_color(hit: &RayHit, y: i32, slice: &WallSlice, col: usize) -> Rgb565 {
-    if (y == slice.start) || (y == slice.end) || is_texture_edge(hit.wall_x) {
-        return WALL_EDGE;
-    }
-    match hit.tile {
-        2 => stripe_color(col),
-        3 => checker_color(col, y),
-        4 => band_color(y, slice),
-        _ => WALL_MAIN,
+pub fn wall_color(hit: &RayHit, y: i32, slice: &WallSlice, _col: usize) -> Rgb565 {
+    let is_dark = hit.side == 1;
+    let main = if is_dark { STONE_DARK } else { STONE_MAIN };
+    let shade = if is_dark { BLACK } else { STONE_DARK };
+
+    let wall_height = (slice.end - slice.start).max(1);
+    let v = (y - slice.start) as f32 / wall_height as f32;
+    let u = hit.wall_x;
+
+    let bricks_y = 4.0;
+    let bricks_x = 2.0;
+
+    let u_off = if (v * bricks_y) as i32 % 2 == 1 { 0.5 } else { 0.0 };
+    let uu = (u * bricks_x + u_off) % 1.0;
+    let vv = (v * bricks_y) % 1.0;
+
+    if uu < 0.1 || vv < 0.1 {
+        shade
+    } else if uu > 0.9 || vv > 0.9 {
+        WALL_EDGE
+    } else {
+        main
     }
 }
 
 pub fn ceiling_color() -> Rgb565 {
-    BLACK
+    CEILING
 }
 
 pub fn floor_color(col: usize, row: i32) -> Rgb565 {
-    if col % 4 == 0 && row % 12 == 0 { FLOOR_DOT } else { BLACK }
-}
-
-fn is_texture_edge(wall_x: f32) -> bool {
-    let shifted = wall_x + 0.5;
-    let centered = wall_x - (shifted as i32) as f32 + 0.5;
-    (centered - 0.5).abs() <= 0.05
-}
-
-fn stripe_color(col: usize) -> Rgb565 {
-    if col % 2 == 0 { WALL_ALT } else { BLACK }
-}
-
-fn checker_color(col: usize, row: i32) -> Rgb565 {
-    if (col ^ row as usize) & 1 == 0 { WALL_ALT } else { BLACK }
-}
-
-fn band_color(y: i32, slice: &WallSlice) -> Rgb565 {
-    if y <= slice.start + 4 || y >= slice.end - 4 { WALL_ALT } else { BLACK }
+    if (col ^ row as usize) % 17 == 0 {
+        FLOOR_DOT
+    } else {
+        FLOOR
+    }
 }

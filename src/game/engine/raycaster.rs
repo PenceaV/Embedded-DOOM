@@ -5,6 +5,7 @@ pub struct RayHit {
     pub perp_dist: f32,
     pub wall_x: f32,
     pub tile: i32,
+    pub side: u8,
 }
 
 pub fn cast_ray(player: &Player, camera_x: f32) -> RayHit {
@@ -20,7 +21,7 @@ pub fn cast_ray(player: &Player, camera_x: f32) -> RayHit {
     let (step_x, mut side_dist_x) = step_and_initial(ray_dir_x, player.x, map_x, delta_x);
     let (step_y, mut side_dist_y) = step_and_initial(ray_dir_y, player.y, map_y, delta_y);
 
-    let mut side = 0u8;
+    let mut side: u8;
 
     loop {
         if side_dist_x < side_dist_y {
@@ -56,6 +57,7 @@ pub fn cast_ray(player: &Player, camera_x: f32) -> RayHit {
         perp_dist,
         wall_x,
         tile: tile_at(map_x, map_y),
+        side,
     }
 }
 

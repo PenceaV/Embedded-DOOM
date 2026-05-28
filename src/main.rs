@@ -8,6 +8,7 @@ use game::state::enemy::Enemy;
 use crate::game::engine::display::GameDisplay;
 use crate::game::input::controls::Controls;
 use crate::game::engine::raycaster::cast_ray;
+use crate::game::engine::audio::MusicPlayer;
 use micromath::F32Ext;
 
 use core::cell::RefCell;
@@ -15,6 +16,7 @@ use embassy_executor::Spawner;
 use embassy_rp::block::ImageDef;
 use embassy_rp::gpio::{Input, Level, Output, Pull};
 use embassy_rp::spi::{self, Spi};
+use embassy_rp::pwm::{Pwm, Config};
 use embassy_sync::blocking_mutex::{Mutex, raw::NoopRawMutex};
 use embassy_embedded_hal::shared_bus::blocking::spi::SpiDevice;
 use embassy_time::Delay;
@@ -64,6 +66,8 @@ async fn main(_spawner: Spawner) {
 
     let mut display = GameDisplay::new(screen);
     let mut player = Player::new();
+    let mut music = MusicPlayer::new(230);
+    let mut pwm = Pwm::new_output_a(p.PWM_SLICE2, p.PIN_20, Config::default());
 
     let mut enemies = [const { None }; 10];
     let mut enemy_count = 0;
@@ -124,6 +128,7 @@ async fn main(_spawner: Spawner) {
         }
 
         player.update();
+        music.update(&mut pwm);
         for i in 0..enemy_count {
             if let Some(ref mut enemy) = enemies[i] {
                 enemy.update(&player);

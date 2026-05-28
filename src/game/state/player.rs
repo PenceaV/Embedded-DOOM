@@ -10,6 +10,7 @@ pub struct Player {
     pub shooting_ticks: u32,
     pub walking_ticks: u32,
     pub is_walking: bool,
+    pub hp: i32,
 }
 
 impl Player {
@@ -24,6 +25,7 @@ impl Player {
             shooting_ticks: 0,
             walking_ticks: 0,
             is_walking: false,
+            hp: 3,
         }
     }
 

@@ -9,6 +9,7 @@ pub struct Enemy {
     pub range: f32,
     pub speed: f32,
     pub hp: i32,
+    pub attack_ticks: u32,
 }
 
 impl Enemy {
@@ -16,22 +17,32 @@ impl Enemy {
         Self {
             x,
             y,
-            range: 5.0,
-            speed: 0.05,
+            range: 8.0,
+            speed: 0.08,
             hp: 2,
+            attack_ticks: 0,
         }
     }
 
-    pub fn update(&mut self, player: &Player) {
+    pub fn update(&mut self, player: &mut Player) {
         let dx = player.x - self.x;
         let dy = player.y - self.y;
         let dist = (dx * dx + dy * dy).sqrt();
 
-        if dist < self.range && dist > 0.5 {
+        if dist < self.range && dist > 0.4 {
             let move_x = (dx / dist) * self.speed;
             let move_y = (dy / dist) * self.speed;
             
             self.try_move(move_x, move_y);
+        }
+
+        if self.attack_ticks > 0 {
+            self.attack_ticks -= 1;
+        }
+        
+        if dist < 0.9 && self.attack_ticks == 0 {
+            player.hp -= 1;
+            self.attack_ticks = 30; // 0.5s at 60fps
         }
     }
 

@@ -10,6 +10,15 @@ const WALL_EDGE: Rgb565 = Rgb565::new(25, 50, 25);
 const STONE_MAIN: Rgb565 = Rgb565::new(15, 30, 15);
 const STONE_DARK: Rgb565 = Rgb565::new(10, 20, 10);
 
+const WOOD_MAIN: Rgb565 = Rgb565::new(20, 15, 5);
+const WOOD_DARK: Rgb565 = Rgb565::new(15, 10, 2);
+
+const METAL_MAIN: Rgb565 = Rgb565::new(15, 15, 25);
+const METAL_DARK: Rgb565 = Rgb565::new(10, 10, 20);
+
+const BRICK_MAIN: Rgb565 = Rgb565::new(25, 10, 5);
+const BRICK_DARK: Rgb565 = Rgb565::new(20, 5, 2);
+
 const SCREEN_HEIGHT: i32 = 240;
 const HALF_HEIGHT: i32 = SCREEN_HEIGHT / 2;
 
@@ -32,8 +41,16 @@ pub fn wall_slice(perp_dist: f32) -> WallSlice {
 
 pub fn wall_color(hit: &RayHit, y: i32, slice: &WallSlice, _col: usize) -> Rgb565 {
     let is_dark = hit.side == 1;
-    let main = if is_dark { STONE_DARK } else { STONE_MAIN };
-    let shade = if is_dark { BLACK } else { STONE_DARK };
+    
+    let (main, dark) = match hit.tile {
+        2 => (WOOD_MAIN, WOOD_DARK),
+        3 => (METAL_MAIN, METAL_DARK),
+        4 => (BRICK_MAIN, BRICK_DARK),
+        _ => (STONE_MAIN, STONE_DARK),
+    };
+
+    let main_color = if is_dark { dark } else { main };
+    let shade = if is_dark { BLACK } else { dark };
 
     let wall_height = (slice.end - slice.start).max(1);
     let v = (y - slice.start) as f32 / wall_height as f32;
@@ -51,7 +68,7 @@ pub fn wall_color(hit: &RayHit, y: i32, slice: &WallSlice, _col: usize) -> Rgb56
     } else if uu > 0.9 || vv > 0.9 {
         WALL_EDGE
     } else {
-        main
+        main_color
     }
 }
 

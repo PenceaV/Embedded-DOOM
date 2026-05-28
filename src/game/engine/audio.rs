@@ -61,7 +61,7 @@ impl MusicPlayer {
     }
 
     pub fn update(&mut self, pwm: &mut Pwm) {
-        let (freq, duration) = DOOM_THEME[self.current_note];
+        let (_freq, duration) = DOOM_THEME[self.current_note];
         let target_duration = (duration / self.tempo_divider).max(1);
 
         if self.ticks >= target_duration {

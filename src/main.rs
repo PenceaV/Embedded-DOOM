@@ -5,11 +5,12 @@ mod game;
 
 use game::state::player::Player;
 use game::state::enemy::Enemy;
-use crate::game::engine::display::GameDisplay;
-use crate::game::input::controls::Controls;
-use crate::game::engine::raycaster::cast_ray;
-use crate::game::engine::audio::MusicPlayer;
-use micromath::F32Ext;
+use game::state::map::{WORLD_MAP, MAP_SIZE};
+use game::engine::display::GameDisplay;
+use game::engine::audio::MusicPlayer;
+use game::engine::led::update_leds;
+use game::input::controls::Controls;
+use game::logic::{handle_input, update_game_state, collect_active_enemies};
 
 use core::cell::RefCell;
 use embassy_executor::Spawner;
@@ -30,11 +31,7 @@ use defmt_rtt as _;
 #[used]
 pub static IMAGE_DEF: ImageDef = ImageDef::secure_exe();
 
-const MOVE_SPEED: f32 = 0.35;
-const ROT_SPEED: f32 = 0.15;
 const DISPLAY_FREQ: u32 = 16_000_000;
-
-use game::state::map::{WORLD_MAP, MAP_SIZE};
 
 #[embassy_executor::main]
 async fn main(_spawner: Spawner) {
@@ -70,7 +67,7 @@ async fn main(_spawner: Spawner) {
     let mut pwm = Pwm::new_output_a(p.PWM_SLICE2, p.PIN_20, Config::default());
 
     let mut led_red = Output::new(p.PIN_3, Level::Low);
-    let mut led_green = Output::new(p.PIN_5, Level::High);
+    let mut led_green = Output::new(p.PIN_5, Level::Low);
     let mut led_blue = Output::new(p.PIN_4, Level::Low);
     let mut frame_count: u32 = 0;
 
@@ -87,101 +84,15 @@ async fn main(_spawner: Spawner) {
     }
 
     loop {
-        if player.hp > 0 {
-            if controls.forward() { player.move_forward(MOVE_SPEED); }
-            if controls.backward() { player.move_backward(MOVE_SPEED); }
-            if controls.turn_left() { player.rotate(ROT_SPEED); }
-            if controls.turn_right() { player.rotate(-ROT_SPEED); }
-            if controls.shoot() { 
-                let was_shooting = player.is_shooting();
-                player.shoot(); 
-                
-                if !was_shooting {
-                    let mut hit_idx: Option<usize> = None;
-                    let mut min_dist = 1000.0;
-                    
-                    let wall_hit = cast_ray(&player, 0.0);
-                    
-                    for i in 0..enemy_count {
-                        if let Some(enemy) = &enemies[i] {
-                            let rx = enemy.x - player.x;
-                            let ry = enemy.y - player.y;
-                            let dist = (rx * rx + ry * ry).sqrt();
-                            
-                            let inv_det = 1.0 / (player.plane_x * player.dir_y - player.dir_x * player.plane_y);
-                            let transform_x = inv_det * (player.dir_y * rx - player.dir_x * ry);
-                            let transform_y = inv_det * (-player.plane_y * rx + player.plane_x * ry);
-                            
-                            if transform_y > 0.1 && transform_y < wall_hit.perp_dist {
-                                let angle_off = (transform_x / transform_y).abs();
-                                if angle_off < 0.2 && dist < min_dist {
-                                    min_dist = dist;
-                                    hit_idx = Some(i);
-                                }
-                            }
-                        }
-                    }
-                    
-                    if let Some(idx) = hit_idx {
-                        if let Some(ref mut enemy) = enemies[idx] {
-                            enemy.hp -= 1;
-                            if enemy.hp <= 0 {
-                                enemies[idx] = None;
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        handle_input(&controls, &mut player, &mut enemies, enemy_count);
+        update_game_state(&mut player, &mut music, &mut pwm, &mut enemies, enemy_count);
+        
+        let active_enemies = collect_active_enemies(&enemies, enemy_count);
+        display.render(&player, &active_enemies).unwrap();
 
-        player.update();
-        music.update(&mut pwm);
-        for i in 0..enemy_count {
-            if let Some(ref mut enemy) = enemies[i] {
-                enemy.update(&mut player);
-            }
-        }
-
-        let mut active_enemies = [Enemy::new(0.0, 0.0); 20];
-        let mut active_count = 0;
-        for i in 0..enemy_count {
-            if let Some(enemy) = &enemies[i] {
-                active_enemies[active_count] = *enemy;
-                active_count += 1;
-            }
-        }
-
-        display.render(&player, &active_enemies[..active_count]).unwrap();
-
+        update_leds(&player, &mut led_red, &mut led_green, &mut led_blue, frame_count);
+        
         frame_count = frame_count.wrapping_add(1);
-        match player.hp {
-            h if h >= 3 => {
-                led_red.set_low();
-                led_green.set_high();
-                led_blue.set_low();
-            }
-            2 => {
-                led_red.set_low();
-                led_green.set_low();
-                led_blue.set_high();
-            }
-            1 => {
-                led_red.set_high();
-                led_green.set_low();
-                led_blue.set_low();
-            }
-            _ => {
-                // Dying / Dead: Flash Red faster (every 5 frames instead of 10)
-                if (frame_count / 5) % 2 == 0 {
-                    led_red.set_high();
-                } else {
-                    led_red.set_low();
-                }
-                led_green.set_low();
-                led_blue.set_low();
-            }
-        }
-
         embassy_time::Timer::after_millis(16).await;
     }
 }

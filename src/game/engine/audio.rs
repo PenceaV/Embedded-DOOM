@@ -1,6 +1,5 @@
 use embassy_rp::pwm::{Pwm, Config};
 
-// Explicit musical pitch definitions mapped to frequency (Hz)
 const NOTE_E2:  u32 = 82;
 const NOTE_E3:  u32 = 164;
 const NOTE_D3:  u32 = 146;
@@ -56,7 +55,7 @@ impl MusicPlayer {
         Self { 
             current_note: 0, 
             ticks: 0,
-            tempo_divider: tempo_divider.max(1), 
+            tempo_divider: tempo_divider.max(1), // zero-division
         }
     }
 
@@ -67,7 +66,6 @@ impl MusicPlayer {
         if self.ticks >= target_duration {
             self.ticks = 0;
             
-            // Loop directly back to 0 without any conditional pause statements
             self.current_note = (self.current_note + 1) % DOOM_THEME.len();
             let (new_freq, _) = DOOM_THEME[self.current_note];
             

@@ -13,7 +13,9 @@ pub struct Enemy {
 }
 
 impl Enemy {
-    pub fn new(x: f32, y: f32) -> Self {
+    pub const DEFAULT: Self = Self::new(0.0, 0.0);
+
+    pub const fn new(x: f32, y: f32) -> Self {
         Self {
             x,
             y,
@@ -32,7 +34,6 @@ impl Enemy {
         if dist < self.range && dist > 0.4 {
             let move_x = (dx / dist) * self.speed;
             let move_y = (dy / dist) * self.speed;
-            
             self.try_move(move_x, move_y);
         }
 
@@ -42,7 +43,7 @@ impl Enemy {
         
         if dist < 0.9 && self.attack_ticks == 0 {
             player.hp -= 1;
-            self.attack_ticks = 30; // 0.5s at 60fps
+            self.attack_ticks = 30;
         }
     }
 

@@ -8,8 +8,9 @@ pub enum SpritePixel {
 
 pub type Sprite = [SpritePixel; 256];
 
-#[allow(non_snake_case)]
-#[inline(always)]
+// instead of color
+#[allow(non_snake_case)] 
+#[inline(always)] // optimization for many C
 pub const fn C(r: u8, g: u8, b: u8) -> SpritePixel {
     SpritePixel::Color(Rgb565::new(r, g, b))
 }

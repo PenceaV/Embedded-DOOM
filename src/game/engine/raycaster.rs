@@ -27,21 +27,21 @@ pub fn cast_ray(player: &Player, camera_x: f32) -> RayHit {
         if side_dist_x < side_dist_y {
             side_dist_x += delta_x;
             map_x += step_x;
-            side = 0;
+            side = 0; // vertical
         } else {
             side_dist_y += delta_y;
             map_y += step_y;
-            side = 1;
+            side = 1; // horizontal
         }
         if tile_at(map_x, map_y) > 0 {
             break;
         }
     }
 
-    let perp_dist = if side == 0 {
+    let perp_dist = if side == 0 { // east - west
         side_dist_x - delta_x
     } else {
-        side_dist_y - delta_y
+        side_dist_y - delta_y // north - south
     };
 
     let wall_x = {
@@ -63,8 +63,8 @@ pub fn cast_ray(player: &Player, camera_x: f32) -> RayHit {
 
 fn step_and_initial(ray_dir: f32, pos: f32, map: i32, delta: f32) -> (i32, f32) {
     if ray_dir < 0.0 {
-        (-1, (pos - map as f32) * delta)
+        (-1, (pos - map as f32) * delta) // left 
     } else {
-        (1, (map as f32 + 1.0 - pos) * delta)
+        (1, (map as f32 + 1.0 - pos) * delta) // right
     }
 }

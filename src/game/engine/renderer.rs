@@ -27,9 +27,9 @@ pub struct WallSlice {
     pub end: i32,
 }
 
-pub fn wall_slice(perp_dist: f32) -> WallSlice {
+pub fn wall_slice(perp_dist: f32) -> WallSlice { // distance to height
     let line_height = if perp_dist > 0.01 {
-        (SCREEN_HEIGHT as f32 / perp_dist) as i32
+        (SCREEN_HEIGHT as f32 / perp_dist) as i32 // dist 1 240 px tall
     } else {
         SCREEN_HEIGHT
     };
@@ -53,14 +53,14 @@ pub fn wall_color(hit: &RayHit, y: i32, slice: &WallSlice, _col: usize) -> Rgb56
     let shade = if is_dark { BLACK } else { dark };
 
     let wall_height = (slice.end - slice.start).max(1);
-    let v = (y - slice.start) as f32 / wall_height as f32;
-    let u = hit.wall_x;
+    let v = (y - slice.start) as f32 / wall_height as f32; // how high texture goes
+    let u = hit.wall_x; // laser hit wall
 
     let bricks_y = 4.0;
     let bricks_x = 2.0;
 
-    let u_off = if (v * bricks_y) as i32 % 2 == 1 { 0.5 } else { 0.0 };
-    let uu = (u * bricks_x + u_off) % 1.0;
+    let u_off = if (v * bricks_y) as i32 % 2 == 1 { 0.5 } else { 0.0 }; // cobblestone pattern
+    let uu = (u * bricks_x + u_off) % 1.0; 
     let vv = (v * bricks_y) % 1.0;
 
     if uu < 0.1 || vv < 0.1 {
@@ -76,8 +76,9 @@ pub fn ceiling_color() -> Rgb565 {
     CEILING
 }
 
+// randomness of the floor
 pub fn floor_color(col: usize, row: i32) -> Rgb565 {
-    if (col ^ row as usize) % 17 == 0 {
+    if (col ^ row as usize) % 17 == 0 { // 1 out of 17 px of diff color
         FLOOR_DOT
     } else {
         FLOOR
